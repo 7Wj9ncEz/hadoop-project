@@ -10,7 +10,7 @@ import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -21,14 +21,14 @@ import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.StringUtils;
 
-public class FriendshipCount {
+public class WordCount {
 
   public static class TokenizerMapper
-       extends Mapper<Object, Text, Text, DoubleWritable>{
+       extends Mapper<Object, Text, Text, IntWritable>{
 
     static enum CountersEnum { INPUT_WORDS }
 
-    private final static DoubleWritable one = new DoubleWritable(0.5);
+    private final static IntWritable one = new IntWritable(1);
     private Text word = new Text();
 
     private boolean caseSensitive;
@@ -74,7 +74,7 @@ public class FriendshipCount {
         line = line.replaceAll(pattern, "");
       }
       StringTokenizer itr = new StringTokenizer(line);
-      System.out.println("=============== Map =============");
+      System.out.println("======================== Map ===========================");
       while (itr.hasMoreTokens()) {
         word.set(itr.nextToken());
         System.out.println(word);
@@ -83,27 +83,27 @@ public class FriendshipCount {
             CountersEnum.INPUT_WORDS.toString());
         counter.increment(1);
       }
-      System.out.println("=============== Map =============");
+      System.out.println("======================== Map ===========================");
     }
   }
 
   public static class IntSumReducer
-       extends Reducer<Text,DoubleWritable,Text,DoubleWritable> {
-    private DoubleWritable result = new DoubleWritable();
+       extends Reducer<Text,IntWritable,Text,IntWritable> {
+    private IntWritable result = new IntWritable();
 
-    public void reduce(Text key, Iterable<DoubleWritable> values,
+    public void reduce(Text key, Iterable<IntWritable> values,
                        Context context
                        ) throws IOException, InterruptedException {
-      double sum = 0.0;
-      System.out.println("==================== Reduce ===================");
-      for (DoubleWritable val : values) {
+      int sum = 0;
+      System.out.println("======================== Reduce ===========================");
+      for (IntWritable val : values) {
         System.out.println(val.get());
         sum += val.get();
       }
       result.set(sum);
       context.write(key, result);
       System.out.println("Key: " + key + " Value: " + sum);
-      System.out.println("==================== Reduce ===================");
+      System.out.println("======================== Reduce ===========================");
     }
   }
 
@@ -116,12 +116,12 @@ public class FriendshipCount {
       System.exit(2);
     }
     Job job = Job.getInstance(conf, "word count");
-    job.setJarByClass(FriendshipCount.class);
+    job.setJarByClass(WordCount.class);
     job.setMapperClass(TokenizerMapper.class);
     job.setCombinerClass(IntSumReducer.class);
     job.setReducerClass(IntSumReducer.class);
     job.setOutputKeyClass(Text.class);
-    job.setOutputValueClass(DoubleWritable.class);
+    job.setOutputValueClass(IntWritable.class);
 
     List<String> otherArgs = new ArrayList<String>();
     for (int i=0; i < remainingArgs.length; ++i) {
